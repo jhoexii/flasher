@@ -1,0 +1,6 @@
+{
+  "name": "esp-flasher-android-build",
+  "private": true,
+  "dependencies": { "esptool-js": "0.7.0" },
+  "devDependencies": { "esbuild": "0.25.9" }
+}

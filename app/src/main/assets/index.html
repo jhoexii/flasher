@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ESP8266 / ESP32 Flasher</title>
+<style>
+:root{
+  --bg:#06101d;--card:#0b1a2d;--card2:#081525;--border:#214263;
+  --text:#edf5ff;--muted:#89a0bb;--blue:#2f82ff;--blue2:#1670f5;
+  --green:#18d99a;--green2:#0bbf83;--red:#e85a6a;--shadow:#0008
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{
+  margin:0;min-width:320px;color:var(--text);font-family:Inter,Arial,sans-serif;
+  background:radial-gradient(circle at 50% -15%,#173d6b55,transparent 38%),#06101d;
+}
+button,input,select{font:inherit}
+button{border:0;cursor:pointer}
+button:disabled{opacity:.35;cursor:not-allowed}
+.page{width:min(1240px,calc(100% - 28px));margin:28px auto 0}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.brand{display:flex;align-items:center;gap:14px}
+.brand-icon{width:56px;height:56px;border:2px solid var(--blue);border-radius:14px;display:grid;place-items:center;color:var(--blue);font-size:31px;box-shadow:0 0 28px #1670f522;background:#07182b}
+.eyebrow{font:700 10px monospace;color:#7590b1;letter-spacing:2px}
+h1{font-size:36px;line-height:1;margin:0 0 6px;letter-spacing:-1.2px}
+h2{font-size:18px;margin:0 0 5px}.muted{color:var(--muted);font-size:12px;line-height:1.45}
+.badge{border:1px solid #00c99b;border-radius:24px;padding:10px 15px;font:800 11px monospace;color:#16e0ae;background:#062b2b}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#17e0bf;margin-right:7px;box-shadow:0 0 10px #17e0bf88}
+.card{background:linear-gradient(145deg,#0c1c30,#091626);border:1px solid var(--border);border-radius:16px;padding:21px;margin:14px 0;box-shadow:0 18px 48px var(--shadow)}
+.head{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;margin-bottom:16px}
+.status{padding:8px 11px;border-radius:9px;font:800 10px monospace;height:max-content;white-space:nowrap}
+.idle{background:#17263b;color:#9cafc6}.busy{background:#4a390d;color:#ffd66d}.ok{background:#063d31;color:#20e6aa}.error{background:#481e27;color:#ff858f}
+.easy-steps{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;margin:0 0 17px;padding:17px 8px;border:1px solid #245078;border-radius:12px;background:#07172a}
+.easy-step{display:flex;gap:13px;align-items:center;padding:0 25px;min-height:66px;border-right:1px solid #1d3a59}
+.easy-step:last-child{border-right:0}
+.easy-step>b{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--blue);color:#fff;font-size:18px;flex:none;box-shadow:0 0 20px #2f82ff33}
+.easy-step strong{display:block;font-size:15px}.easy-step small{display:block;color:#8ba3be;font-size:11px;margin-top:4px;line-height:1.35}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px}
+button{border-radius:10px;padding:11px 18px;color:#fff;font-weight:800;font-size:11px;min-height:40px}
+button:hover:not(:disabled){filter:brightness(1.08)}
+.primary{background:var(--blue)}.secondary{background:#1a2b43}.success{background:#0f9f70}.danger{background:#743246}
+.help{font-size:11px;color:#8fa8c4;background:#071526;border:1px solid #1d3b5c;border-radius:10px;padding:10px 12px;margin:0 0 14px;line-height:1.5}
+.connection-panel{display:grid;grid-template-columns:1.15fr 1fr 1.35fr 1fr auto;gap:0;align-items:stretch;margin:0 0 15px;border:1px solid #00c99b;border-radius:12px;background:linear-gradient(100deg,#06342f,#06202b);overflow:hidden}
+.connection-main{display:flex;align-items:center;gap:12px;padding:13px 15px}
+.connection-icon{width:42px;height:42px;border-radius:11px;background:#0aa47d;display:grid;place-items:center;font-size:22px;flex:none}
+.connection-main strong{font-size:16px;color:#15e5b0}.connection-main small{display:block;color:#8bb0b5;font-size:11px;margin-top:4px}.connection-main b{color:#e8ffff}
+.port-pill{display:inline-block;margin-left:4px;padding:3px 7px;border-radius:6px;background:#0c7e72;color:#eaffff;font:700 11px monospace}
+.conn-box{padding:13px 15px;border-left:1px solid #125149}.conn-box small{display:block;color:#7896a9;font:700 9px monospace;margin-bottom:5px}.conn-box b{font:700 12px monospace;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#12e2ad}
+.conn-check{width:42px;height:42px;margin:auto 15px;border-radius:50%;background:#23d59a;color:#05362d;display:grid;place-items:center;font-size:23px;font-weight:900}
+.device{display:none}.platform-badge{display:inline-block;margin-left:7px;padding:3px 7px;border-radius:6px;background:#12365b;color:#8fc4ff;font:800 9px monospace}
+.progress-bg{height:9px;border-radius:20px;background:#14273e;overflow:hidden;border:1px solid #1e3a58}
+.progress{height:100%;width:0;background:linear-gradient(90deg,#16c979,#27df83);transition:width .12s}
+.progress-text{text-align:right;font:600 10px monospace;color:#91a5be;margin-top:5px}
+.firmware-head{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:15px}
+.firmware-title{display:flex;align-items:center;gap:12px}.section-icon{width:42px;height:42px;border-radius:10px;background:#1670f5;color:#fff;display:grid;place-items:center;font-size:21px;box-shadow:0 0 18px #1670f533}
+.firmware-row{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:17px;align-items:center}
+.drop{border:1px solid #28537d;border-radius:12px;min-height:70px;padding:12px 14px;display:flex;align-items:center;gap:12px;background:#071525;cursor:pointer;transition:.15s}
+.drop:hover,.drop.drag{border-color:#4a99ff;background:#0a1e34}.drop.selected{border-color:#2f82ff;background:#081b30}.drop.selected .icon{color:#63a8ff}
+.icon{width:44px;height:44px;display:grid;place-items:center;background:#122943;border-radius:10px;font-size:22px;color:#6ca6ff;flex:none}.file-meta{min-width:0}.file-meta b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.file-meta .muted{margin-top:3px}
+#flash{width:100%;height:70px;font-size:18px;background:linear-gradient(135deg,#2f82ff,#1670f5);box-shadow:0 10px 24px #1670f533}
+#flash:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.06)}
+.settings{display:grid;grid-template-columns:1.15fr 1fr 1fr 1fr 1fr;gap:10px;margin-top:15px}
+label{font-size:10px;color:#8098b3;font-weight:800}input[type=text],select{width:100%;height:39px;margin-top:5px;padding:0 10px;background:#071423;color:#dce9f7;border:1px solid #29445f;border-radius:8px;outline:none;font:500 11px monospace}
+.check{grid-column:span 2;display:flex;align-items:center;gap:7px;padding:0 9px;border:1px solid #29445f;border-radius:8px;background:#071423;color:#aebfd3}.check input{accent-color:#20d99a}
+.ready-line{margin-top:11px;border:1px solid #0b8f78;border-radius:10px;padding:9px 11px;background:#062a29;color:#12ddb0;font-size:11px;font-weight:700}
+.console-head{align-items:center}.console-actions{display:flex;gap:8px;align-items:center}.console{height:350px;overflow:auto;background:#02070d;border:1px solid #1c3047;border-radius:10px;padding:12px;font:11px/1.55 monospace;color:#c7d2df}.log{white-space:pre-wrap;overflow-wrap:anywhere}.err{color:#ff7f88}.warn{color:#e5bb63}.good{color:#25e6ae}
+.autoscroll{border:1px solid #2b4c70;border-radius:9px;background:#0b1a2d;color:#8fb0d1;padding:8px 10px;font-size:10px}.autoscroll input{accent-color:#2f82ff}
+footer{display:flex;justify-content:space-between;color:#586f8c;font:10px monospace;padding:8px 2px 28px}
+@media(max-width:900px){.connection-panel{grid-template-columns:1fr 1fr}.conn-check{display:none}.settings{grid-template-columns:repeat(2,1fr)}.check{grid-column:span 2}}
+@media(max-width:700px){.page{width:min(100% - 18px,1240px);margin-top:16px}.top{align-items:flex-start;gap:14px}.brand-icon{width:46px;height:46px;font-size:25px}.brand{gap:10px}h1{font-size:29px}.badge{display:none}.easy-steps{grid-template-columns:1fr;padding:0}.easy-step{padding:12px 15px;border-right:0;border-bottom:1px solid #1d3a59}.easy-step:last-child{border-bottom:0}.firmware-row{grid-template-columns:1fr}#flash{height:58px}.connection-panel{grid-template-columns:1fr}.conn-box{border-left:0;border-top:1px solid #125149}.settings{grid-template-columns:1fr}.check{grid-column:span 1}.console{height:280px}.head{flex-direction:column}}
+@media(max-width:430px){.actions button{flex:1}.firmware-head{align-items:flex-start}.top{flex-direction:column}.easy-step strong{font-size:13px}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="top">
+    <div class="brand">
+      <div class="brand-icon">▣</div>
+      <div>
+        <div class="eyebrow">WEB SERIAL • ESP8266 / ESP32</div>
+        <h1>ESP8266 / ESP32 Flasher</h1>
+        <div class="muted">Browser-based firmware flasher • ESP8266 + ESP32 • CH340 / CP2102 / FTDI</div>
+      </div>
+    </div>
+    <div class="badge"><span class="dot"></span> LOCAL TOOL</div>
+  </div>
+
+  <section class="card hero-card">
+    <div class="head">
+      <div>
+        <h2>Ikonekta ang ESP8266 / ESP32</h2>
+        <div class="muted">Ikonekta ang board sa USB, piliin ang tamang serial port, at i-flash ang .bin firmware.</div>
+      </div>
+      <div id="status" class="status idle">DISCONNECTED</div>
+    </div>
+
+    <div class="easy-steps">
+      <div class="easy-step"><b>1</b><span><strong>Ikonekta ang board</strong><small>ESP8266 o ESP32 — ikonekta sa USB at piliin ang serial port.</small></span></div>
+      <div class="easy-step"><b>2</b><span><strong>Piliin ang firmware</strong><small>Pumili ng compatible .bin file para sa ESP8266 o ESP32.</small></span></div>
+      <div class="easy-step"><b>3</b><span><strong>I-flash</strong><small>I-click ang FLASH at huwag tanggalin ang USB habang nagfa-flash.</small></span></div>
+    </div>
+
+    <div class="actions">
+      <button id="connect" class="primary">🔌 CONNECT DEVICE</button>
+      <button id="disconnect" class="secondary" disabled>DISCONNECT</button>
+      <button id="erase" class="danger" disabled>ERASE</button>
+    </div>
+    <div id="help" class="help">Start by connecting your ESP8266 or ESP32. You will be asked to choose the USB serial port.</div>
+
+    <div class="connection-panel">
+      <div class="connection-main">
+        <div class="connection-icon">♧</div>
+        <div>
+          <strong id="connectionTitle">DISCONNECTED</strong><span id="platformBadge" class="platform-badge">AUTO</span>
+          <small>Nakakonekta sa: <span id="portName" class="port-pill">—</span> <span id="usbType"></span></small>
+        </div>
+      </div>
+      <div class="conn-box"><small>CHIP</small><b id="chip">—</b></div>
+      <div class="conn-box"><small>DEVICE HWID</small><b id="hwid">—</b></div>
+      <div class="conn-box"><small>FLASH</small><b id="detectedFlash">—</b></div>
+      <div class="conn-check" id="connCheck">✓</div>
+    </div>
+
+    <div class="progress-bg"><div id="progress" class="progress"></div></div>
+    <div id="percent" class="progress-text">0%</div>
+  </section>
+
+  <section class="card">
+    <div class="firmware-head">
+      <div class="firmware-title">
+        <div class="section-icon">▰</div>
+        <div><h2>Firmware</h2><div class="muted">Pumili ng ESP8266 o ESP32 .bin file (mula sa iyong computer).</div></div>
+      </div>
+    </div>
+
+    <div class="firmware-row">
+      <div id="drop" class="drop">
+        <input id="file" type="file" accept=".bin,application/octet-stream" hidden>
+        <div class="icon">↑</div>
+        <div class="file-meta">
+          <b id="filename">I-drag dito ang .BIN o i-click para pumili</b>
+          <div class="muted">Firmware binary only</div>
+        </div>
+      </div>
+      <button id="flash" class="success" disabled>⚡ FLASH <span style="font-size:22px">›</span></button>
+    </div>
+
+    <div class="settings">
+      <label>FLASH ADDRESS<input id="address" type="text" value="0x00000"></label>
+      <label>BAUDRATE<select id="baud"><option>115200</option><option>230400</option><option>460800</option><option>921600</option></select></label>
+      <label>FLASH MODE<select id="mode"><option value="keep">KEEP</option><option value="dio">DIO</option><option value="qio">QIO</option><option value="dout">DOUT</option><option value="qout">QOUT</option></select></label>
+      <label>FLASH FREQ<select id="freq"><option value="keep">KEEP</option><option value="40m">40 MHz</option><option value="26m">26 MHz</option><option value="20m">20 MHz</option><option value="80m">80 MHz</option></select></label>
+      <label>FLASH SIZE<select id="size"><option value="detect">DETECT</option><option value="keep">KEEP</option><option value="512KB">512 KB</option><option value="1MB">1 MB</option><option value="2MB">2 MB</option><option value="4MB" selected>4 MB</option><option value="8MB">8 MB</option><option value="16MB">16 MB</option></select></label>
+      <label class="check"><input id="eraseAll" type="checkbox" checked> Erase entire flash before writing</label>
+    </div>
+    <div id="readyLine" class="ready-line">● Connect your ESP8266 or ESP32 and choose a firmware file to start.</div>
+  </section>
+
+  <section class="card">
+    <div class="head console-head">
+      <div><h2>Console</h2><div class="muted">Live na output ng pag-flash</div></div>
+      <div class="console-actions">
+        <label class="autoscroll"><input id="autoScroll" type="checkbox" checked> AUTO SCROLL</label>
+        <button id="clear" class="secondary" style="padding:8px 12px;font-size:10px">CLEAR</button>
+      </div>
+    </div>
+    <div id="console" class="console"></div>
+  </section>
+
+  <footer><span>ESP8266 / ESP32 Flasher</span><span>Powered by Espressif esptool-js v0.7.0</span></footer>
+</div>
+
+<script src="esptool.bundle.js"></script>
+<script>
+const { ESPLoader, Transport } = window.esptool;
+
+// Minimal Web Serial-compatible adapter backed by Android USB Host + usb-serial-for-android.
+(function(){
+  function b64(u8){ let s=""; for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode(...u8.subarray(i,i+0x8000)); return btoa(s); }
+  function unb64(s){ const x=atob(s); const a=new Uint8Array(x.length); for(let i=0;i<x.length;i++)a[i]=x.charCodeAt(i); return a; }
+  class AndroidSerialPort {
+    constructor(){ this._info={}; this.readable=null; this.writable=null; this.opened=false; }
+    getInfo(){ return this._info; }
+    async open(o={}){
+      const start=Date.now(); AndroidUSB.requestPort();
+      while(!AndroidUSB.portReady() && Date.now()-start<20000) await new Promise(r=>setTimeout(r,100));
+      if(!AndroidUSB.portReady()) throw new Error("No USB serial device permission granted.");
+      if(!AndroidUSB.open(o.baudRate||115200)) throw new Error("Failed to open USB serial port.");
+      this._info=JSON.parse(AndroidUSB.getInfo()||"{}"); this.opened=true;
+      this.readable=new ReadableStream({pull:async(controller)=>{ const d=AndroidUSB.read(1000); if(d) controller.enqueue(unb64(d)); }});
+      this.writable=new WritableStream({write:async(chunk)=>{ const u=chunk instanceof Uint8Array?chunk:new Uint8Array(chunk); if(AndroidUSB.write(b64(u))<0) throw new Error("USB write failed"); }});
+    }
+    async close(){ this.opened=false; try{AndroidUSB.close()}catch{} this.readable=null; this.writable=null; }
+    async setSignals(s){ AndroidUSB.setSignals(!!s.dataTerminalReady, !!s.requestToSend); }
+  }
+  const serial={async requestPort(){return new AndroidSerialPort()}, addEventListener(){}, getPorts:async()=>[]};
+  Object.defineProperty(navigator,"serial",{value:serial,configurable:false});
+})();
+
+const $ = id => document.getElementById(id);
+let port=null, transport=null, loader=null, connected=false, file=null, busy=false;
+
+function log(msg, cls=""){
+  const e=document.createElement("div"); e.className="log "+cls; e.textContent=msg;
+  $("console").appendChild(e);
+  if($("autoScroll").checked) $("console").scrollTop=$("console").scrollHeight;
+}
+function status(t,c="idle"){$("status").textContent=t;$("status").className="status "+c}
+function progress(n,label){n=Math.max(0,Math.min(100,n));$("progress").style.width=n+"%";$("percent").textContent=label||n.toFixed(0)+"%"}
+function size(n){return n<1024?n+" B":n<1048576?(n/1024).toFixed(1)+" KB":(n/1048576).toFixed(2)+" MB"}
+function mac(v){return String(v||"").replace(/[^0-9a-f]/gi,"").match(/.{1,2}/g)?.join(":").toUpperCase()||"—"}
+function terminal(){
+  return {
+    clean(){},writeLine(d){if(String(d).trim())log(String(d))},
+    write(d){if(String(d).trim())log(String(d))}
+  };
+}
+function controls(){
+  $("connect").disabled=busy;
+  $("disconnect").disabled=busy||!connected;
+  $("erase").disabled=busy||!connected;
+  $("flash").disabled=busy||!connected||!file;
+}
+function help(msg){ $("help").textContent=msg; }
+function friendlyError(e){
+  const m=String(e?.message||e||"Unknown error");
+  if(/No port selected|No port/i.test(m)) return "No USB port was selected. Click CONNECT DEVICE and choose your ESP8266.";
+  if(/Failed to open|open/i.test(m)) return "The USB port could not be opened. Close other serial-monitor apps and try again.";
+  if(/timeout|Timed out/i.test(m)) return "The board did not respond. Try holding FLASH/BOOT while clicking CONNECT DEVICE.";
+  if(/bootloader|sync|packet/i.test(m)) return "The board did not enter bootloader mode. Hold FLASH/BOOT, then reconnect.";
+  return m;
+}
+function portDetails(p){
+  try{
+    const i=p?.getInfo?.()||{};
+    const vid=i.usbVendorId ? i.usbVendorId.toString(16).padStart(4,"0").toUpperCase() : "";
+    const pid=i.usbProductId ? i.usbProductId.toString(16).padStart(4,"0").toUpperCase() : "";
+    let name="USB Serial";
+    if(vid==="1A86" && pid==="7523") name="CH340";
+    else if(vid==="10C4" && pid==="EA60") name="CP210x";
+    else if(vid==="0403" && pid==="6001") name="FTDI";
+    return {name,usb:vid&&pid?`VID ${vid} • PID ${pid}`:"USB serial port"};
+  }catch{return {name:"USB Serial",usb:"USB serial port"}}
+}
+function isEsp32Chip(name){
+  const n=String(name||"").toUpperCase();
+  return n.includes("ESP32") || n.includes("ESP32-S") || n.includes("ESP32-C") || n.includes("ESP32-H") || n.includes("ESP32-P");
+}
+function setPlatformUI(chipName){
+  const esp32=isEsp32Chip(chipName);
+  const platform=esp32?"ESP32":"ESP8266";
+  $("platformBadge").textContent=platform;
+  $("connectionTitle").dataset.platform=platform;
+  $("readyLine").textContent=connected ? "✓ " + platform + " detected. Handa nang i-flash." : "● Connect your ESP8266 or ESP32 and choose a firmware file to start.";
+  return esp32;
+}
+
+async function connect(){
+  if(!( "serial" in navigator)){log("Web Serial is not supported. Use Chrome or Edge on desktop.","err");return}
+  try{
+    $("connect").disabled=true;status("CONNECTING…","busy");$("connectionTitle").textContent="CONNECTING…";$("connCheck").textContent="…";$("portName").textContent="SELECTING PORT";$("usbType").textContent="";
+    help("Piliin ang USB serial port ng ESP8266. Kung may BOOT/FLASH button, puwede itong i-hold habang kumokonekta.");log("Requesting USB serial port…");
+    port=await navigator.serial.requestPort();
+    const pd=portDetails(port);$("portName").textContent=pd.name;$("usbType").textContent="("+pd.usb+")";
+    log("USB port selected: "+pd.name+" • "+pd.usb);
+    transport=new Transport(port,true);
+    loader=new ESPLoader({transport,baudrate:Number($("baud").value),romBaudrate:115200,terminal:terminal(),debugLogging:false});
+    log("Connecting to ESP bootloader…");
+    const chipName=await loader.main();
+    let m="—";try{m=mac(await loader.chip.readMac(loader))}catch(e){log("[WARN] Could not read MAC/HWID.","warn")}
+    let fs="—";try{fs=await loader.detectFlashSize()||"—"}catch(e){log("[WARN] Automatic flash-size detection failed. You can select the size manually.","warn")}
+    if((!fs||fs==="—") && $("size").value!=="detect") fs=$("size").selectedOptions[0].textContent;
+    const detectedChip=chipName||"ESP8266";
+    const esp32=setPlatformUI(detectedChip);
+    $("chip").textContent=detectedChip;$("hwid").textContent=m;$("detectedFlash").textContent=fs;
+    connected=true;status("CONNECTED","ok");$("connectionTitle").textContent="CONNECTED • "+detectedChip;$("connCheck").textContent="✓";
+    $("platformBadge").textContent=esp32?"ESP32":"ESP8266";
+    $("connect").textContent="RE-CONNECT";help("Board connected. Piliin ang firmware file, then click FLASH.");
+    log("[+] Connected: "+detectedChip,"good");log("[+] Platform: "+(esp32?"ESP32":"ESP8266"),"good");log("[+] USB port: "+pd.name+" • "+pd.usb,"good");log("[+] Device HWID: "+m,"good");log("[+] Flash size: "+fs,"good");
+  }catch(e){
+    connected=false;status("CONNECTION ERROR","error");$("connectionTitle").textContent="CONNECTION ERROR";$("connCheck").textContent="×";$("portName").textContent="—";$("usbType").textContent="";help(friendlyError(e));log("[ERROR] "+friendlyError(e),"err");
+    try{await transport?.disconnect()}catch{} port=null;transport=null;loader=null;
+  }finally{controls()}
+}
+async function disconnect(){
+  try{await transport?.disconnect()}catch(e){log("[WARN] "+e.message,"warn")}
+  connected=false;port=null;transport=null;loader=null;
+  $("chip").textContent=$("hwid").textContent=$("detectedFlash").textContent="—";
+  $("connectionTitle").textContent="DISCONNECTED";$("platformBadge").textContent="AUTO";$("portName").textContent="—";$("usbType").textContent="";$("connCheck").textContent="✓";
+  status("DISCONNECTED");controls();
+}
+async function flash(){
+  if(!loader||!file)return;
+  try{
+    busy=true;controls();status("FLASHING…","busy");help("Flashing in progress. Do not unplug the ESP8266/ESP32.");progress(0);
+    let a=$("address").value.trim().toLowerCase();
+    let address=a.startsWith("0x")?parseInt(a,16):parseInt(a,10);
+    if(!Number.isFinite(address)||address<0)throw new Error("Invalid flash address.");
+    log("=== FLASH START ===");
+    log("File: "+file.name);log("Size: "+size(file.size));log("Address: 0x"+address.toString(16).toUpperCase());
+    const data=new Uint8Array(await file.arrayBuffer());
+    const options={
+      fileArray:[{address,data}],
+      flashMode:$("mode").value,
+      flashFreq:$("freq").value,
+      flashSize:$("size").value === "detect" ? "keep" : $("size").value,
+      eraseAll:$("eraseAll").checked,
+      compress:false,
+      reportProgress:(_i,w,total)=>progress(total?w/total*100:0)
+    };
+    log("Writing firmware to flash…");
+    await loader.writeFlash(options);
+    progress(100,"100%");
+    log("[+] Flash complete! Wrote "+size(data.length)+".","good");
+    log("[+] Resetting device…");
+    await loader.after("hard_reset");
+    log("[✓] DONE. Reset complete.","good");status("DONE","ok");$("connectionTitle").textContent="CONNECTED • FLASH COMPLETE";help("Firmware installed successfully. You can now disconnect the ESP8266.");$("readyLine").textContent="✓ Flash completed successfully!";
+  }catch(e){
+    status("FLASH ERROR","error");help(friendlyError(e));log("[ERROR] "+friendlyError(e),"err");
+    log("Tip: Hold FLASH/BOOT while connecting if automatic bootloader entry fails.","warn");
+  }finally{busy=false;controls()}
+}
+async function erase(){
+  if(!loader||busy)return;
+  if(!confirm("Burahin ang buong flash memory ng ESP8266?"))return;
+  try{
+    busy=true;controls();status("ERASING…","busy");help("Erasing can take a little while. Do not unplug the board.");log("=== FULL FLASH ERASE ===");
+    await loader.eraseFlash();progress(100,"100%");
+    log("[+] Full flash erase complete.","good");status("ERASE DONE","ok");help("Flash memory is empty. Select firmware and flash it.");
+  }catch(e){status("ERASE ERROR","error");help(friendlyError(e));log("[ERROR] "+friendlyError(e),"err")}
+  finally{busy=false;controls()}
+}
+function choose(f){
+  if(!f)return;
+  if(!f.name.toLowerCase().endsWith(".bin")){log("[ERROR] .BIN firmware only.","err");return}
+  file=f;
+  $("filename").textContent=f.name;
+  $("drop").classList.add("selected");
+  help(connected ? "Tama ang file. Handa nang i-flash ang board." : "Firmware selected. Ikonekta muna ang ESP8266 o ESP32.");
+  $("readyLine").textContent=connected ? "✓ Tama ang file. Handa nang i-flash ang board!" : "● Firmware selected. Ikonekta muna ang ESP8266 o ESP32.";
+  controls();
+  log("[+] Firmware selected: "+f.name);log("[INFO] For ESP32, use a merged .bin when flashing a single file at 0x00000.","warn");
+}
+$("connect").onclick=connect;$("disconnect").onclick=disconnect;$("flash").onclick=flash;$("erase").onclick=erase;
+$("autoScroll").onchange=()=>{if($("autoScroll").checked) $("console").scrollTop=$("console").scrollHeight};
+$("clear").onclick=()=>$("console").innerHTML="";
+$("file").onchange=e=>choose(e.target.files[0]);
+$("drop").onclick=()=>$("file").click();
+$("drop").ondragover=e=>{e.preventDefault();$("drop").classList.add("drag")};
+$("drop").ondragleave=()=>$("drop").classList.remove("drag");
+$("drop").ondrop=e=>{e.preventDefault();$("drop").classList.remove("drag");choose(e.dataTransfer.files[0])};
+if("serial" in navigator)navigator.serial.addEventListener("disconnect",()=>{if(connected&&!busy){log("[WARN] USB serial device disconnected.","warn");disconnect()}});
+log("Ready. Android USB OTG bridge is active. Connect your ESP8266 or ESP32, then choose the firmware .BIN file.");
+$("connectionTitle").textContent="DISCONNECTED";
+</script>
+</body>
+</html>
